@@ -1,7 +1,7 @@
 import requests
 
-# URL ของ Flask API (ถ้า local ให้ใช้ http://127.0.0.1:5000/get_token)
-url = "http://127.0.0.1:5000/get_token"
+ 
+url = "https://videosdk-2e7n.onrender.com/get_token"
 
 payload = {
     "roomId": "TA",          # กำหนดห้อง
@@ -15,6 +15,7 @@ response = requests.post(url, json=payload, headers=headers)
 print("Status Code:", response.status_code)
 
 try:
+    
     print("Response JSON:", response.json())
 except requests.exceptions.JSONDecodeError:
     print("Response Text:", response.text)
