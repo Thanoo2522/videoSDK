@@ -22,7 +22,7 @@ def get_token():
         data = request.json
         participant_id = data.get("participantId", str(uuid.uuid4()))
 
-        # 1) สร้าง meeting ผ่าน VideoSDK API
+        # 1) สร้างห้องประชุมผ่าน VideoSDK API
         url = "https://api.videosdk.live/v2/rooms"
         headers = {
             "Authorization": VIDEOSDK_API_KEY,
@@ -38,7 +38,7 @@ def get_token():
         if not room_id:
             return jsonify({"error": "❌ Missing roomId from VideoSDK"}), 500
 
-        # 2) สร้าง JWT token
+        # 2) สร้าง JWT token ตาม format ที่ VideoSDK ต้องการ
         expiration_time_in_seconds = 3600
         current_timestamp = int(time.time())
 
@@ -52,12 +52,14 @@ def get_token():
 
         token = jwt.encode(payload, VIDEOSDK_SECRET_KEY, algorithm="HS256")
 
+        # ส่งค่า roomId ในชื่อ meetingId ให้ MAUI ใช้
         return jsonify({
             "apiKey": VIDEOSDK_API_KEY,
-            "meetingId": room_id,  # ส่ง roomId เป็น meetingId
+            "meetingId": room_id,  # roomId → meetingId
             "participantId": participant_id,
             "token": token
         })
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
