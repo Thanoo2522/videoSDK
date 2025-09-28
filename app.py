@@ -22,7 +22,7 @@ def get_token():
         data = request.json
         participant_id = data.get("participantId", str(uuid.uuid4()))
 
-        # 1) สร้าง meeting (roomId) ผ่าน VideoSDK API
+        # 1) สร้าง meeting ผ่าน VideoSDK API
         url = "https://api.videosdk.live/v2/rooms"
         headers = {
             "Authorization": VIDEOSDK_API_KEY,
@@ -54,7 +54,7 @@ def get_token():
 
         return jsonify({
             "apiKey": VIDEOSDK_API_KEY,
-            "roomId": room_id,  # คืนค่า roomId
+            "meetingId": room_id,  # ส่ง roomId เป็น meetingId
             "participantId": participant_id,
             "token": token
         })
@@ -63,4 +63,5 @@ def get_token():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
