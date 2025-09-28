@@ -7,6 +7,7 @@ from flask import Flask, jsonify, request
 from dotenv import load_dotenv
 
 load_dotenv()
+
 app = Flask(__name__)
 
 VIDEOSDK_API_KEY = os.getenv("VIDEOSDK_API_KEY")
@@ -15,13 +16,10 @@ VIDEOSDK_SECRET_KEY = os.getenv("VIDEOSDK_SECRET_KEY")
 if not VIDEOSDK_API_KEY or not VIDEOSDK_SECRET_KEY:
     raise ValueError("❌ VIDEOSDK_API_KEY หรือ VIDEOSDK_SECRET_KEY ไม่ถูกตั้งค่าใน .env")
 
-@app.route("/get_token", methods=["POST"])
-def get_token():
+@app.route("/create_room", methods=["POST"])
+def create_room():
     try:
-        data = request.json
-        participant_id = data.get("participantId", str(uuid.uuid4()))
-
-        # 1) สร้าง meeting (roomId) ผ่าน VideoSDK API
+        # 1) สร้างห้องประชุม
         url = "https://api.videosdk.live/v2/rooms"
         headers = {
             "Authorization": VIDEOSDK_API_KEY,
@@ -31,11 +29,26 @@ def get_token():
         res = requests.post(url, json=body, headers=headers)
 
         if res.status_code != 200:
-            return jsonify({"error": "❌ Cannot create meeting", "details": res.text}), 500
+            return jsonify({"error": "❌ ไม่สามารถสร้างห้องประชุมได้", "details": res.text}), 500
 
         room_id = res.json().get("roomId")
         if not room_id:
-            return jsonify({"error": "❌ Missing roomId from VideoSDK"}), 500
+            return jsonify({"error": "❌ ไม่พบ roomId จาก VideoSDK"}), 500
+
+        return jsonify({"roomId": room_id})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/generate_token", methods=["POST"])
+def generate_token():
+    try:
+        data = request.json
+        participant_id = data.get("participantId", str(uuid.uuid4()))
+        room_id = data.get("roomId")
+
+        if not room_id:
+            return jsonify({"error": "❌ ต้องระบุ roomId"}), 400
 
         # 2) สร้าง JWT token
         expiration_time_in_seconds = 3600
@@ -53,7 +66,7 @@ def get_token():
 
         return jsonify({
             "apiKey": VIDEOSDK_API_KEY,
-            "meetingId": room_id,  # roomId ถูกส่งเป็น meetingId
+            "roomId": room_id,
             "participantId": participant_id,
             "token": token
         })
