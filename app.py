@@ -29,7 +29,7 @@ def get_token():
         if res.status_code != 200:
             return jsonify({"error": "❌ Cannot create meeting", "details": res.text}), 500
 
-        meeting_id = res.json().get("roomId")  # VideoSDK return roomId = meetingId
+        meeting_id = res.json().get("roomId")  # ✅ VideoSDK ส่ง roomId กลับมา
 
         # 2) สร้าง JWT token
         expiration_time_in_seconds = 3600
@@ -47,7 +47,7 @@ def get_token():
 
         return jsonify({
             "apiKey": VIDEOSDK_API_KEY,
-            "meetingId": meeting_id,      # ✅ ส่ง meetingId กลับไป
+            "meetingId": meeting_id,
             "participantId": participant_id,
             "token": token
         })
