@@ -4,7 +4,7 @@ import requests
 url = "https://videosdk-2e7n.onrender.com/get_token"
 
 payload = {
-    "roomId": "TA",          # กำหนดห้อง
+    
     "participantId": "123"   # กำหนดผู้เข้าร่วม
 }
 

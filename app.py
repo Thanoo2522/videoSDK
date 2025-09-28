@@ -15,24 +15,28 @@ VIDEOSDK_SECRET_KEY = os.getenv("VIDEOSDK_SECRET_KEY")
 if not VIDEOSDK_API_KEY or not VIDEOSDK_SECRET_KEY:
     raise ValueError("❌ VIDEOSDK_API_KEY หรือ VIDEOSDK_SECRET_KEY ไม่ถูกตั้งค่าใน .env")
 
+
 @app.route("/get_token", methods=["POST"])
 def get_token():
     try:
         data = request.json
         participant_id = data.get("participantId", str(uuid.uuid4()))
 
-        # 1) ขอ meetingId จาก VideoSDK API
+        # 1) สร้าง meeting (roomId) ผ่าน VideoSDK API
         url = "https://api.videosdk.live/v2/rooms"
         headers = {
             "Authorization": VIDEOSDK_API_KEY,
             "Content-Type": "application/json"
         }
-        res = requests.post(url, headers=headers, json={})
+        body = {"name": "TestRoom"}
+        res = requests.post(url, json=body, headers=headers)
 
         if res.status_code != 200:
             return jsonify({"error": "❌ Cannot create meeting", "details": res.text}), 500
 
-        meeting_id = res.json().get("roomId")  # VideoSDK ส่ง roomId กลับมา
+        meeting_id = res.json().get("roomId")
+        if not meeting_id:
+            return jsonify({"error": "❌ Missing roomId from VideoSDK"}), 500
 
         # 2) สร้าง JWT token
         expiration_time_in_seconds = 3600
@@ -50,7 +54,7 @@ def get_token():
 
         return jsonify({
             "apiKey": VIDEOSDK_API_KEY,
-            "meetingId": meeting_id,  # เปลี่ยนชื่อ key
+            "meetingId": meeting_id,  # ส่ง meetingId กลับ
             "participantId": participant_id,
             "token": token
         })
