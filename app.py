@@ -15,14 +15,13 @@ VIDEOSDK_SECRET_KEY = os.getenv("VIDEOSDK_SECRET_KEY")
 if not VIDEOSDK_API_KEY or not VIDEOSDK_SECRET_KEY:
     raise ValueError("❌ VIDEOSDK_API_KEY หรือ VIDEOSDK_SECRET_KEY ไม่ถูกตั้งค่าใน .env")
 
-
 @app.route("/get_token", methods=["POST"])
 def get_token():
     try:
         data = request.json
         participant_id = data.get("participantId", str(uuid.uuid4()))
 
-        # 1) สร้าง meeting ผ่าน VideoSDK API
+        # 1) สร้าง meeting (roomId) ผ่าน VideoSDK API
         url = "https://api.videosdk.live/v2/rooms"
         headers = {
             "Authorization": VIDEOSDK_API_KEY,
@@ -54,14 +53,13 @@ def get_token():
 
         return jsonify({
             "apiKey": VIDEOSDK_API_KEY,
-            "meetingId": room_id,  # ส่ง roomId เป็น meetingId
+            "meetingId": room_id,  # roomId ถูกส่งเป็น meetingId
             "participantId": participant_id,
             "token": token
         })
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=5000)
