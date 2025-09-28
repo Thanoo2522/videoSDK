@@ -22,21 +22,21 @@ def get_token():
         data = request.json
         participant_id = data.get("participantId", str(uuid.uuid4()))
 
-        # 1) สร้าง meeting (room) ใน VideoSDK
+        # 1) ขอ meetingId จาก VideoSDK API
         url = "https://api.videosdk.live/v2/rooms"
-        headers = {"Authorization": VIDEOSDK_API_KEY}
+        headers = {
+            "Authorization": VIDEOSDK_API_KEY,
+            "Content-Type": "application/json"
+        }
         res = requests.post(url, headers=headers)
-
-        print("VideoSDK create meeting response:", res.status_code, res.text)
 
         if res.status_code != 200:
             return jsonify({"error": "❌ Cannot create meeting", "details": res.text}), 500
 
-        meeting_data = res.json()
-        meeting_id = meeting_data.get("roomId") or meeting_data.get("id")  # ลองทั้งสองคีย์
+        meeting_id = res.json().get("roomId")  # meetingId จริงจาก VideoSDK
 
         if not meeting_id:
-            return jsonify({"error": "❌ meetingId not returned by VideoSDK"}), 500
+            return jsonify({"error": "❌ meetingId ไม่ถูกสร้าง"}), 500
 
         # 2) สร้าง JWT token
         expiration_time_in_seconds = 3600
