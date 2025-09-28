@@ -1,4 +1,4 @@
 gunicorn 
-Flask==2.4.1
+Flask
 python-dotenv==1.0.0
 PyJWT==2.8.0
