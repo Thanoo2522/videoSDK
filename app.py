@@ -4,17 +4,15 @@ import uuid
 import jwt
 import requests
 from flask import Flask, jsonify, request
-from dotenv import load_dotenv
 
-# โหลด ENV
-load_dotenv()
 app = Flask(__name__)
 
+# โหลด ENV จาก Render Environment Variables
 VIDEOSDK_API_KEY = os.getenv("VIDEOSDK_API_KEY")
 VIDEOSDK_SECRET_KEY = os.getenv("VIDEOSDK_SECRET_KEY")
 
 if not VIDEOSDK_API_KEY or not VIDEOSDK_SECRET_KEY:
-    raise Exception("❌ VIDEOSDK_API_KEY or VIDEOSDK_SECRET_KEY not found in .env file")
+    raise Exception("❌ VIDEOSDK_API_KEY or VIDEOSDK_SECRET_KEY not found in environment")
 
 # -------------------------------
 # ฟังก์ชันสร้าง JWT token
@@ -45,10 +43,10 @@ def create_room():
     token = generate_token()
     url = "https://api.videosdk.live/v2/rooms"
     headers = {
-        "Authorization": token,
+        "Authorization": f"Bearer {token}",  # ✅ ต้องมี Bearer
         "Content-Type": "application/json"
     }
-    data = {"region": "sg001"}  # เลือก region ตามใกล้ที่สุด
+    data = {"region": "sg001"}  # เลือก region ใกล้ที่สุด เช่น sg001 (Singapore)
     response = requests.post(url, headers=headers, json=data)
 
     return jsonify(response.json()), response.status_code
@@ -71,4 +69,5 @@ def validate():
 # Main
 # -------------------------------
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    port = int(os.environ.get("PORT", 5000))  # ⚡ Render ใช้ PORT env var
+    app.run(debug=True, host="0.0.0.0", port=port)
