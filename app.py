@@ -35,7 +35,7 @@ def generate_token():
 # -------------------------------
 # API: GET token
 # -------------------------------
-@app.route("/get-token", methods=["GET"])
+@app.route("/get_token", methods=["GET"])
 def get_token():
     token = generate_token()
     return jsonify({"token": token})
