@@ -59,7 +59,7 @@ def get_token():
         # 3) ส่งข้อมูลกลับแบบ meetingId
         return jsonify({
             "apiKey": VIDEOSDK_API_KEY,
-            "meetingId": room_id,  # เปลี่ยนชื่อจาก roomId → meetingId
+            "meetingId": room_id,  # เปลี่ยนชื่อจาก roomId → meetingId # เปลี่ยนตรงนี้ให้แน่ใจ
             "participantId": participant_id,
             "token": token
         })
