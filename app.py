@@ -14,18 +14,7 @@ VIDEOSDK_API_KEY = os.getenv("VIDEOSDK_API_KEY")
 VIDEOSDK_SECRET_KEY = os.getenv("VIDEOSDK_SECRET_KEY")
 
 if not VIDEOSDK_API_KEY or not VIDEOSDK_SECRET_KEY:
-    raise ValueError("❌ VIDEOSDK_API_KEY หรือ VIDEOSDK_SECRET_KEY ไม่ถูกตั้งค่าใน environment variables")
-
-
-def generate_sdk_token():
-    """สร้าง JWT token สำหรับ VideoSDK API"""
-    payload = {
-        "apikey": VIDEOSDK_API_KEY,
-        "iat": int(time.time()),
-        "exp": int(time.time()) + 60 * 60,  # อายุ token 1 ชั่วโมง
-        "jti": str(uuid.uuid4())
-    }
-    return jwt.encode(payload, VIDEOSDK_SECRET_KEY, algorithm="HS256")
+    raise ValueError("❌ VIDEOSDK_API_KEY หรือ VIDEOSDK_SECRET_KEY ไม่ถูกต้อง")
 
 
 @app.route("/get_token", methods=["POST"])
@@ -34,43 +23,39 @@ def get_token():
         data = request.json or {}
         participant_id = data.get("participantId", str(uuid.uuid4()))
 
-        # 1) สร้าง SDK token เพื่อใช้เรียก VideoSDK API
-        sdk_token = generate_sdk_token()
-
-        # 2) สร้างห้องประชุม
+        # ✅ สร้างห้องใหม่ (VideoSDK จะ return meetingId)
         url = "https://api.videosdk.live/v2/rooms"
         headers = {
-            "Authorization": sdk_token,
+            "Authorization": VIDEOSDK_API_KEY,
             "Content-Type": "application/json"
         }
-        body = {
-            "name": "TestRoom",
-            "region": "sg001"
-        }
+        body = {"name": "TestRoom", "region": "sg001"}
         res = requests.post(url, json=body, headers=headers)
 
         if res.status_code != 200:
             return jsonify({"error": "❌ Cannot create meeting", "details": res.text}), 500
 
-        room_id = res.json().get("roomId")
-        if not room_id:
-            return jsonify({"error": "❌ Missing roomId from VideoSDK"}), 500
+        meeting_id = res.json().get("roomId")  # VideoSDK API return roomId = meetingId
+        if not meeting_id:
+            return jsonify({"error": "❌ Missing meetingId from VideoSDK"}), 500
 
-        # 3) สร้าง token สำหรับผู้ใช้เข้าร่วม
-        user_payload = {
+        # ✅ Generate JWT token
+        current_time = int(time.time())
+        payload = {
             "apikey": VIDEOSDK_API_KEY,
-            "roomId": room_id,
+            "roomId": meeting_id,
             "participantId": participant_id,
-            "iat": int(time.time()),
-            "exp": int(time.time()) + 60 * 60  # 1 ชั่วโมง
+            "iat": current_time,
+            "exp": current_time + 3600
         }
-        user_token = jwt.encode(user_payload, VIDEOSDK_SECRET_KEY, algorithm="HS256")
+        token = jwt.encode(payload, VIDEOSDK_SECRET_KEY, algorithm="HS256")
 
+        # ✅ ส่งกลับให้ client
         return jsonify({
             "apiKey": VIDEOSDK_API_KEY,
-            "meetingId": room_id,  # เปลี่ยนชื่อเป็น meetingId ตามที่ต้องการ
+            "meetingId": meeting_id,
             "participantId": participant_id,
-            "token": user_token
+            "token": token
         })
 
     except Exception as e:
