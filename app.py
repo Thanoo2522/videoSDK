@@ -26,7 +26,7 @@ def get_token():
         # 1) สร้างห้องประชุมผ่าน VideoSDK API
         url = "https://api.videosdk.live/v2/rooms"
         headers = {
-            "Authorization": VIDEOSDK_API_KEY,
+            "Authorization": VIDEOSDK_API_KEY,  # ใช้ API Key สร้างห้อง
             "Content-Type": "application/json"
         }
         body = {
@@ -42,7 +42,7 @@ def get_token():
         if not room_id:
             return jsonify({"error": "❌ Missing roomId from VideoSDK"}), 500
 
-        # 2) สร้าง JWT token ตาม format ที่ VideoSDK ต้องการ
+        # 2) สร้าง JWT token สำหรับเข้าร่วมห้อง
         expiration_time_in_seconds = 3600
         current_timestamp = int(time.time())
 
@@ -56,16 +56,13 @@ def get_token():
 
         token = jwt.encode(payload, VIDEOSDK_SECRET_KEY, algorithm="HS256")
 
-        # 3) ส่งข้อมูลกลับให้ client
+        # 3) ส่งข้อมูลกลับแบบ meetingId
         return jsonify({
-             "apiKey": VIDEOSDK_API_KEY,
-    "meetingId": roomID,  # เปลี่ยนชื่อ
-    "participantId": participant_id,
-    "token": token
+            "apiKey": VIDEOSDK_API_KEY,
+            "meetingId": room_id,  # เปลี่ยนชื่อจาก roomId → meetingId
+            "participantId": participant_id,
+            "token": token
         })
-    
-    
-    
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
