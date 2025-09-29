@@ -58,11 +58,14 @@ def get_token():
 
         # 3) ส่งข้อมูลกลับให้ client
         return jsonify({
-            "apiKey": VIDEOSDK_API_KEY,
-            "meetingId": room_id,  # meetingId = roomId
-            "participantId": participant_id,
-            "token": token
+             "apiKey": VIDEOSDK_API_KEY,
+    "meetingId": room_id,  # เปลี่ยนชื่อ
+    "participantId": participant_id,
+    "token": token
         })
+    
+    
+    
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500

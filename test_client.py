@@ -1,18 +1,32 @@
 import requests
+import json
 
- 
-url = "https://videosdk-2e7n.onrender.com/get-token"
+# URL Flask Server ของคุณ (แก้ให้ตรงกับของคุณ)
+FLASK_SERVER_URL = "https://videosdk-2e7n.onrender.com/get_token"
 
-payload = {  }
+# ส่ง request ไปที่ Flask Server
+def test_flask_server():
+    try:
+        headers = {
+            "Content-Type": "application/json"
+        }
+        # คุณสามารถส่ง participantId หรือไม่ก็ได้
+        payload = {
+            "participantId": "user-1234"
+        }
 
-headers = {"Content-Type": "application/json"}
+        response = requests.post(FLASK_SERVER_URL, headers=headers, json=payload)
 
-response = requests.get(url, json=payload, headers=headers)
+        if response.status_code == 200:
+            data = response.json()
+            print("✅ Response จาก Flask Server:")
+            print(json.dumps(data, indent=4))
+        else:
+            print(f"❌ Error {response.status_code}: {response.text}")
 
-print("Status Code:", response.status_code)
+    except Exception as e:
+        print(f"❌ Exception: {e}")
 
-try:
-    
-    print("Response JSON:", response.json())
-except requests.exceptions.JSONDecodeError:
-    print("Response Text:", response.text)
+
+if __name__ == "__main__":
+    test_flask_server()
