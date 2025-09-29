@@ -6,7 +6,6 @@ import requests
 from flask import Flask, jsonify, request
 from dotenv import load_dotenv
 
-# โหลดค่า .env
 load_dotenv()
 
 app = Flask(__name__)
@@ -19,12 +18,11 @@ if not VIDEOSDK_API_KEY or not VIDEOSDK_SECRET_KEY:
 
 
 def generate_sdk_token():
-    """สร้าง JWT token สำหรับเรียก VideoSDK API"""
     current_time = int(time.time())
     payload = {
         "apikey": VIDEOSDK_API_KEY,
         "iat": current_time,
-        "exp": current_time + 3600,  # อายุ token 1 ชั่วโมง
+        "exp": current_time + 3600,
         "jti": str(uuid.uuid4())
     }
     return jwt.encode(payload, VIDEOSDK_SECRET_KEY, algorithm="HS256")
@@ -36,10 +34,8 @@ def get_token():
         data = request.json or {}
         participant_id = data.get("participantId", str(uuid.uuid4()))
 
-        # 1) สร้าง SDK token เพื่อเรียก VideoSDK API
         sdk_token = generate_sdk_token()
 
-        # 2) สร้างห้องประชุมผ่าน VideoSDK API
         url = "https://api.videosdk.live/v2/rooms"
         headers = {
             "Authorization": sdk_token,
@@ -58,7 +54,6 @@ def get_token():
         if not meeting_id:
             return jsonify({"error": "❌ Missing roomId from VideoSDK"}), 500
 
-        # 3) สร้าง user token สำหรับเข้าร่วมประชุม
         current_time = int(time.time())
         payload = {
             "apikey": VIDEOSDK_API_KEY,
@@ -67,22 +62,17 @@ def get_token():
             "iat": current_time,
             "exp": current_time + 3600
         }
-        token = jwt.encode(payload, VIDEOSDK_SECRET_KEY, algorithm="HS256")
+        user_token = jwt.encode(payload, VIDEOSDK_SECRET_KEY, algorithm="HS256")
 
         return jsonify({
             "apiKey": VIDEOSDK_API_KEY,
-            "meetingId": meeting_id,   # ✅ ใช้ meetingId แทน roomId
+            "meetingId": meeting_id,
             "participantId": participant_id,
-            "token": token
+            "token": user_token
         })
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
-@app.route("/")
-def home():
-    return jsonify({"status": "✅ Flask VideoSDK server running"})
 
 
 if __name__ == "__main__":
