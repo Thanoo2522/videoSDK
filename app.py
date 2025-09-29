@@ -17,17 +17,14 @@ if not VIDEOSDK_API_KEY or not VIDEOSDK_SECRET_KEY:
     raise ValueError("❌ VIDEOSDK_API_KEY หรือ VIDEOSDK_SECRET_KEY ไม่ถูกตั้งค่าใน environment variables")
 
 
-def generate_videosdk_token():
-    expiration_time_in_seconds = 3600
-    current_timestamp = int(time.time())
-
+def generate_sdk_token():
+    """สร้าง JWT token สำหรับ VideoSDK API"""
     payload = {
         "apikey": VIDEOSDK_API_KEY,
-        "iat": current_timestamp,
-        "exp": current_timestamp + expiration_time_in_seconds,
+        "iat": int(time.time()),
+        "exp": int(time.time()) + 60 * 60,  # อายุ token 1 ชั่วโมง
         "jti": str(uuid.uuid4())
     }
-
     return jwt.encode(payload, VIDEOSDK_SECRET_KEY, algorithm="HS256")
 
 
@@ -37,10 +34,10 @@ def get_token():
         data = request.json or {}
         participant_id = data.get("participantId", str(uuid.uuid4()))
 
-        # 1) สร้าง JWT สำหรับ API call
-        sdk_token = generate_videosdk_token()
+        # 1) สร้าง SDK token เพื่อใช้เรียก VideoSDK API
+        sdk_token = generate_sdk_token()
 
-        # 2) เรียก VideoSDK API เพื่อสร้างห้อง
+        # 2) สร้างห้องประชุม
         url = "https://api.videosdk.live/v2/rooms"
         headers = {
             "Authorization": sdk_token,
@@ -59,19 +56,19 @@ def get_token():
         if not room_id:
             return jsonify({"error": "❌ Missing roomId from VideoSDK"}), 500
 
-        # 3) สร้าง Token สำหรับผู้ใช้เข้าร่วม
+        # 3) สร้าง token สำหรับผู้ใช้เข้าร่วม
         user_payload = {
             "apikey": VIDEOSDK_API_KEY,
             "roomId": room_id,
-            "participantId": participant_id, # dada
+            "participantId": participant_id,
             "iat": int(time.time()),
-            "exp": int(time.time()) + 3600
+            "exp": int(time.time()) + 60 * 60  # 1 ชั่วโมง
         }
         user_token = jwt.encode(user_payload, VIDEOSDK_SECRET_KEY, algorithm="HS256")
 
         return jsonify({
             "apiKey": VIDEOSDK_API_KEY,
-            "meetingId": room_id,
+            "meetingId": room_id,  # เปลี่ยนชื่อเป็น meetingId ตามที่ต้องการ
             "participantId": participant_id,
             "token": user_token
         })
