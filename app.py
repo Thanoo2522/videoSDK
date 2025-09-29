@@ -63,7 +63,7 @@ def get_token():
         user_payload = {
             "apikey": VIDEOSDK_API_KEY,
             "roomId": room_id,
-            "participantId": participant_id,
+            "participantId": participant_id, # dada
             "iat": int(time.time()),
             "exp": int(time.time()) + 3600
         }
