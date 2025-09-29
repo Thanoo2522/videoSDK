@@ -6,6 +6,7 @@ import requests
 from flask import Flask, jsonify, request
 from dotenv import load_dotenv
 
+# โหลดค่า .env
 load_dotenv()
 
 app = Flask(__name__)
@@ -18,11 +19,12 @@ if not VIDEOSDK_API_KEY or not VIDEOSDK_SECRET_KEY:
 
 
 def generate_sdk_token():
-    """สร้าง JWT token สำหรับ VideoSDK API"""
+    """สร้าง JWT token สำหรับเรียก VideoSDK API"""
+    current_time = int(time.time())
     payload = {
         "apikey": VIDEOSDK_API_KEY,
-        "iat": int(time.time()),
-        "exp": int(time.time()) + 60 * 60,  # อายุ token 1 ชั่วโมง
+        "iat": current_time,
+        "exp": current_time + 3600,  # อายุ token 1 ชั่วโมง
         "jti": str(uuid.uuid4())
     }
     return jwt.encode(payload, VIDEOSDK_SECRET_KEY, algorithm="HS256")
@@ -34,10 +36,10 @@ def get_token():
         data = request.json or {}
         participant_id = data.get("participantId", str(uuid.uuid4()))
 
-        # 1) สร้าง SDK token เพื่อใช้เรียก VideoSDK API
+        # 1) สร้าง SDK token เพื่อเรียก VideoSDK API
         sdk_token = generate_sdk_token()
 
-        # 2) สร้างห้องประชุม
+        # 2) สร้างห้องประชุมผ่าน VideoSDK API
         url = "https://api.videosdk.live/v2/rooms"
         headers = {
             "Authorization": sdk_token,
@@ -52,29 +54,35 @@ def get_token():
         if res.status_code != 200:
             return jsonify({"error": "❌ Cannot create meeting", "details": res.text}), 500
 
-        room_id = res.json().get("roomId")
-        if not room_id:
+        meeting_id = res.json().get("roomId")
+        if not meeting_id:
             return jsonify({"error": "❌ Missing roomId from VideoSDK"}), 500
 
-        # 3) สร้าง token สำหรับผู้ใช้เข้าร่วม
-        user_payload = {
+        # 3) สร้าง user token สำหรับเข้าร่วมประชุม
+        current_time = int(time.time())
+        payload = {
             "apikey": VIDEOSDK_API_KEY,
-            "roomId": room_id,
+            "roomId": meeting_id,
             "participantId": participant_id,
-            "iat": int(time.time()),
-            "exp": int(time.time()) + 60 * 60  # 1 ชั่วโมง
+            "iat": current_time,
+            "exp": current_time + 3600
         }
-        user_token = jwt.encode(user_payload, VIDEOSDK_SECRET_KEY, algorithm="HS256")
+        token = jwt.encode(payload, VIDEOSDK_SECRET_KEY, algorithm="HS256")
 
         return jsonify({
             "apiKey": VIDEOSDK_API_KEY,
-            "meetingId": room_id,  # เปลี่ยนชื่อเป็น meetingId ตามที่ต้องการ
+            "meetingId": meeting_id,   # ✅ ใช้ meetingId แทน roomId
             "participantId": participant_id,
-            "token": user_token
+            "token": token
         })
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/")
+def home():
+    return jsonify({"status": "✅ Flask VideoSDK server running"})
 
 
 if __name__ == "__main__":
